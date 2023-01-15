@@ -21,17 +21,26 @@ public class QuickSceneTool : EditorWindow
     private static string version = "1.0.0";
     // private static string autor = "Sangko.Deng";
 
-    int selectedOption1 = 0;
-    string[] options = { "Scene1- basic demo secne", "Scene2- FPS demo scene", "Scene2- Parkour demo scene" };
-    int lastSelectedOption1 = 0;
+    int selectedSceneOption = 0;
+    string[] options_demoScene = { "Scene1- basic demo secne", "Scene2- FPS demo scene", "Scene2- Parkour demo scene" };
+    int lastSelectedSceneOption = 0;
+
+
+    bool cb_CameraController = true;
+    bool cb_CharacterController = true;
+
+
 
     static string currentScriptPath;
     static string resourcesPath;
 
     static string materialPath;
 
-    private void Awake()
+    private void OnEnable()
     {
+        cb_CameraController = true;
+        cb_CharacterController = true;
+
     }
 
 
@@ -64,32 +73,47 @@ public class QuickSceneTool : EditorWindow
         buttonStyle.active.background = GUI.skin.button.active.background;
         buttonStyle.hover.background = GUI.skin.button.hover.background;
 
-
+        /// ////////////////////////////////////////////////////BOX1
         EditorGUILayout.BeginVertical("box");
         EditorGUILayout.LabelField("Please select an demo scene to create");
         EditorGUILayout.Space();
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Demo Scene:", GUILayout.Width(96));
-        selectedOption1 = EditorGUILayout.Popup(selectedOption1, options);
+        EditorGUILayout.LabelField("Demo Scene", GUILayout.Width(96));
+        selectedSceneOption = EditorGUILayout.Popup(selectedSceneOption, options_demoScene);
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
 
-        if (lastSelectedOption1 != selectedOption1)
+        if (lastSelectedSceneOption != selectedSceneOption)
         {
-            lastSelectedOption1 = selectedOption1;
+            lastSelectedSceneOption = selectedSceneOption;
             // Do something when the option is changed
-            Debug.Log("Selected demo scene: " + options[selectedOption1]);
+            Debug.Log("Selected demo scene: " + options_demoScene[selectedSceneOption]);
         }
 
 
 
+        /// ////////////////////////////////////////////////////BOX2
+        //Checkbox
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField("Please select controller");
+
+        CreateCheckbox("Camera Controller", ref cb_CameraController);
+        CreateCheckbox("Character Controller", ref cb_CharacterController);
+
+        EditorGUILayout.EndVertical();
+
+
+
+        /// ////////////////////////////////////////////////////Button
+
+        EditorGUILayout.BeginVertical("box");
 
         EditorGUILayout.BeginVertical();
         GUILayout.FlexibleSpace();
 
         if (GUILayout.Button("Create Scene", buttonStyle))
         {
-            if (selectedOption1 == 0)
+            if (selectedSceneOption == 0)
             {
                 buildDemoScene_basic01();
             }
@@ -97,6 +121,8 @@ public class QuickSceneTool : EditorWindow
             EditorUtility.DisplayDialog("Create Scene", "Scene is created successfully!", "OK");
 
         }
+
+        EditorGUILayout.EndVertical();
 
         EditorGUILayout.EndVertical();
     }
@@ -146,6 +172,8 @@ public class QuickSceneTool : EditorWindow
         if (camera != null)
         {
             camera.transform.parent = environment.transform;
+
+            // if (cb_CameraController) return;
             camera.transform.position = new Vector3(0, 10, -10);
             camera.transform.rotation = Quaternion.Euler(60, 0, 0);
             camera.transform.LookAt(player.transform);
@@ -156,6 +184,7 @@ public class QuickSceneTool : EditorWindow
             camera.name = "MainCamera";
             camera.tag = "MainCamera";
             camera.transform.parent = environment.transform;
+            // if (cb_CameraController) return;
             camera.transform.position = new Vector3(0, 10, -10);
             camera.transform.rotation = Quaternion.Euler(60, 0, 0);
             camera.transform.LookAt(player.transform);
@@ -207,25 +236,37 @@ public class QuickSceneTool : EditorWindow
 
 
 
-        /*Attach CharacterController.cs to Player*/
-        string[] guids = AssetDatabase.FindAssets("t:Script CharacterController");
-        if (guids.Length == 0)
+        /* Attach Controller */
+        if (cb_CharacterController)
         {
-            Debug.LogError("CharacterController.cs not found!");
-            return;
+            string[] guids = AssetDatabase.FindAssets("t:Script CharacterController");
+            if (guids.Length == 0)
+            {
+                Debug.LogError("CharacterController.cs not found!");
+                return;
+            }
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            if (player != null)
+            {
+                player.AddComponent<CharacterController>();
+            }
+            else
+            {
+                Debug.LogError("No GameObject with tag 'Player' found in the scene.");
+            }
         }
-        string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-        if (player != null)
+        if (cb_CharacterController)
         {
-            player.AddComponent<CharacterController>();
+            //do something
         }
-        else
-        {
-            Debug.LogError("No GameObject with tag 'Player' found in the scene.");
-        }
-
     }
 
+
+
+
+    /// <summary>
+    ///  Create Folders In Current Script Location
+    /// </summary>
     public static void CreateFoldersInCurrentScriptLocation()
     {
         currentScriptPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<QuickSceneTool>())));
@@ -241,5 +282,25 @@ public class QuickSceneTool : EditorWindow
         {
             AssetDatabase.CreateFolder(resourcesPath, "Material");
         }
+    }
+
+
+
+    /// <summary>
+    ///  CreateCheckbox - title is max left / checkbox is max right(10%)
+    /// </summary>
+    /// <param name="label"></param>
+    /// <param name="checkbox"></param>
+    void CreateCheckbox(string label, ref bool checkbox_state)
+    {
+        bool lastCheckboxState = checkbox_state;
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.currentViewWidth - EditorGUIUtility.currentViewWidth * 0.1f));
+        checkbox_state = EditorGUILayout.Toggle(checkbox_state);
+        if (checkbox_state != lastCheckboxState) //防止拖动或缩放面板导致也输出
+        {
+            Debug.Log(label + ": " + checkbox_state);
+        }
+        EditorGUILayout.EndHorizontal();
     }
 }

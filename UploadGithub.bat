@@ -12,7 +12,7 @@ goto begin
 echo Continuing...
 
 git add .
-git commit -m "update ui"
+git commit -m "feat: add CameraController checkbox & PlayerController checkbox"
 
 color 2F & echo Start upload to github.......
 git push origin main
