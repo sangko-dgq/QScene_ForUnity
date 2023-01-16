@@ -36,12 +36,16 @@ public class QuickSceneTool : EditorWindow
 
     static string materialPath;
 
+
+    GameObject player;
+    GameObject camera;
+
+
     private void OnEnable()
     {
-        cb_CameraController = true;
-        cb_CharacterController = true;
 
     }
+
 
 
     [MenuItem("Tools/QuickDemoScene")]
@@ -53,6 +57,10 @@ public class QuickSceneTool : EditorWindow
     }
     private void OnGUI()
     {
+        EditorGUI.BeginChangeCheck();
+
+
+
         //LOGO
         // GUILayout.Label("QuickScene TOOL", EditorStyles.boldLabel);
         string logo_name = "QuickDemoScene";
@@ -104,6 +112,7 @@ public class QuickSceneTool : EditorWindow
 
 
 
+
         /// ////////////////////////////////////////////////////Button
 
         EditorGUILayout.BeginVertical("box");
@@ -125,6 +134,34 @@ public class QuickSceneTool : EditorWindow
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.EndVertical();
+
+
+        /// when GUI element update
+        if (EditorGUI.EndChangeCheck())
+        {
+            //When the elements on the panel change, the code here will be executed
+            player = GameObject.FindGameObjectWithTag("Player");
+            camera = GameObject.FindGameObjectWithTag("MainCamera");
+
+            if (player != null && player.GetComponent<CharacterController>() != null)
+            {
+                player.GetComponent<CharacterController>().enabled = cb_CharacterController;
+            }
+            else
+            {
+                Debug.LogError("No GameObject with tag 'Player' found in the scene.");
+            }
+
+
+            if (camera != null && camera.GetComponent<CameraController>() != null)
+            {
+                camera.GetComponent<CameraController>().enabled = cb_CameraController;
+            }
+            else
+            {
+                Debug.LogError("No GameObject with tag 'Main Camera' found in the scene.");
+            }
+        }
     }
 
 
@@ -143,7 +180,7 @@ public class QuickSceneTool : EditorWindow
 
 
         // Create Player
-        GameObject player = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        player = GameObject.CreatePrimitive(PrimitiveType.Cube);
         player.transform.parent = environment.transform;
         player.transform.position = new Vector3(0, 0.5f, 0);
         player.name = "Player";
@@ -168,7 +205,7 @@ public class QuickSceneTool : EditorWindow
 
 
         // Create MainCamera
-        GameObject camera = GameObject.FindWithTag("MainCamera");
+        camera = GameObject.FindWithTag("MainCamera");
         if (camera != null)
         {
             camera.transform.parent = environment.transform;
@@ -237,28 +274,47 @@ public class QuickSceneTool : EditorWindow
 
 
         /* Attach Controller */
-        if (cb_CharacterController)
+
+        string[] guids = AssetDatabase.FindAssets("t:Script CharacterController");
+        string[] guids_cam = AssetDatabase.FindAssets("t:Script CameraController");
+
+        if (guids.Length == 0)
         {
-            string[] guids = AssetDatabase.FindAssets("t:Script CharacterController");
-            if (guids.Length == 0)
-            {
-                Debug.LogError("CharacterController.cs not found!");
-                return;
-            }
-            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-            if (player != null)
-            {
-                player.AddComponent<CharacterController>();
-            }
-            else
-            {
-                Debug.LogError("No GameObject with tag 'Player' found in the scene.");
-            }
+            Debug.LogError("CharacterController.cs not found!");
+            return;
         }
-        if (cb_CharacterController)
+        if (guids_cam.Length == 0)
         {
-            //do something
+            Debug.LogError("CameraController.cs not found!");
+            return;
         }
+
+        string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+        string path_cam = AssetDatabase.GUIDToAssetPath(guids_cam[0]);
+
+        if (player != null && !player.GetComponent<CharacterController>())
+        {
+            player.AddComponent<CharacterController>().enabled = cb_CharacterController;
+        }
+        else
+        {
+            Debug.LogError("No GameObject with tag 'Player' found in the scene.");
+        }
+
+
+        if (camera != null && !camera.GetComponent<CameraController>())
+        {
+            camera.AddComponent<CameraController>().enabled = cb_CameraController;
+        }
+        else
+        {
+            Debug.LogError("No GameObject with tag 'Main Camera' found in the scene.");
+        }
+
+
+
+
+
     }
 
 
@@ -303,4 +359,6 @@ public class QuickSceneTool : EditorWindow
         }
         EditorGUILayout.EndHorizontal();
     }
+
+
 }
