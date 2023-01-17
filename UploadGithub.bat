@@ -12,7 +12,7 @@ goto begin
 echo Continuing...
 
 git add .
-git commit -m "feat: add CameraController checkbox & PlayerController checkbox"
+git commit -m "feat: add Stylized Scene"
 
 color 2F & echo Start upload to github.......
 git push origin main

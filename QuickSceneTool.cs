@@ -22,7 +22,7 @@ public class QuickSceneTool : EditorWindow
     // private static string autor = "Sangko.Deng";
 
     int selectedSceneOption = 0;
-    string[] options_demoScene = { "Scene1- basic demo secne", "Scene2- FPS demo scene", "Scene2- Parkour demo scene" };
+    string[] options_demoScene = { "Scene1- basic demo secne", "Scene2- 风格化场景简单示例", "Scene2- Parkour demo scene" };
     int lastSelectedSceneOption = 0;
 
 
@@ -57,10 +57,6 @@ public class QuickSceneTool : EditorWindow
     }
     private void OnGUI()
     {
-        EditorGUI.BeginChangeCheck();
-
-
-
         //LOGO
         // GUILayout.Label("QuickScene TOOL", EditorStyles.boldLabel);
         string logo_name = "QuickDemoScene";
@@ -99,6 +95,7 @@ public class QuickSceneTool : EditorWindow
         }
 
 
+        EditorGUI.BeginChangeCheck();
 
         /// ////////////////////////////////////////////////////BOX2
         //Checkbox
@@ -107,31 +104,6 @@ public class QuickSceneTool : EditorWindow
 
         CreateCheckbox("Camera Controller", ref cb_CameraController);
         CreateCheckbox("Character Controller", ref cb_CharacterController);
-
-        EditorGUILayout.EndVertical();
-
-
-
-
-        /// ////////////////////////////////////////////////////Button
-
-        EditorGUILayout.BeginVertical("box");
-
-        EditorGUILayout.BeginVertical();
-        GUILayout.FlexibleSpace();
-
-        if (GUILayout.Button("Create Scene", buttonStyle))
-        {
-            if (selectedSceneOption == 0)
-            {
-                buildDemoScene_basic01();
-            }
-
-            EditorUtility.DisplayDialog("Create Scene", "Scene is created successfully!", "OK");
-
-        }
-
-        EditorGUILayout.EndVertical();
 
         EditorGUILayout.EndVertical();
 
@@ -162,7 +134,85 @@ public class QuickSceneTool : EditorWindow
                 Debug.LogError("No GameObject with tag 'Main Camera' found in the scene.");
             }
         }
+
+
+
+        /// ////////////////////////////////////////////////////Button
+
+        EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.BeginVertical();
+        GUILayout.FlexibleSpace();
+
+        if (GUILayout.Button("Create Scene", buttonStyle))
+        {
+            if (selectedSceneOption == 0)
+            {
+                buildDemoScene_basic01();
+            }
+            else if (selectedSceneOption == 1)
+            {
+                buildDemoScene_stylizedScene();
+            }
+
+            EditorUtility.DisplayDialog("Create Scene", "Scene is created successfully!", "OK");
+
+        }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.EndVertical();
+
+
+
     }
+
+
+
+
+
+
+
+    /// <summary>
+    ///  Create Folders In Current Script Location
+    /// </summary>
+    public static void CreateFoldersInCurrentScriptLocation()
+    {
+        currentScriptPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<QuickSceneTool>())));
+        resourcesPath = currentScriptPath + "/Resources";
+        materialPath = resourcesPath + "/Material";
+
+        if (!AssetDatabase.IsValidFolder(resourcesPath))
+        {
+            AssetDatabase.CreateFolder(currentScriptPath, "Resources");
+        }
+
+        if (!AssetDatabase.IsValidFolder(materialPath))
+        {
+            AssetDatabase.CreateFolder(resourcesPath, "Material");
+        }
+    }
+
+
+
+    /// <summary>
+    ///  CreateCheckbox - title is max left / checkbox is max right(10%)
+    /// </summary>
+    /// <param name="label"></param>
+    /// <param name="checkbox"></param>
+    void CreateCheckbox(string label, ref bool checkbox_state)
+    {
+        bool lastCheckboxState = checkbox_state;
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.currentViewWidth - EditorGUIUtility.currentViewWidth * 0.1f));
+        checkbox_state = EditorGUILayout.Toggle(checkbox_state);
+        if (checkbox_state != lastCheckboxState) //防止拖动或缩放面板导致也输出
+        {
+            Debug.Log(label + ": " + checkbox_state);
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
 
 
 
@@ -318,47 +368,98 @@ public class QuickSceneTool : EditorWindow
     }
 
 
-
-
-    /// <summary>
-    ///  Create Folders In Current Script Location
-    /// </summary>
-    public static void CreateFoldersInCurrentScriptLocation()
+    private void buildDemoScene_stylizedScene()
     {
-        currentScriptPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<QuickSceneTool>())));
-        resourcesPath = currentScriptPath + "/Resources";
-        materialPath = resourcesPath + "/Material";
+        /* Basic Folders */
+        CreateFoldersInCurrentScriptLocation();
 
-        if (!AssetDatabase.IsValidFolder(resourcesPath))
+        Shader shader;
+        if (GraphicsSettings.renderPipelineAsset != null)
         {
-            AssetDatabase.CreateFolder(currentScriptPath, "Resources");
+            if (GraphicsSettings.renderPipelineAsset.GetType() == typeof(UniversalRenderPipelineAsset))
+            {
+                shader = Shader.Find("Universal Render Pipeline/Lit");
+            }
+            else
+            {
+                shader = Shader.Find("Standard");
+            }
+        }
+        else
+        {
+            shader = Shader.Find("Standard");
         }
 
-        if (!AssetDatabase.IsValidFolder(materialPath))
+        Material groundMaterial = new Material(shader);
+        Material skyboxMaterial = new Material(shader);
+
+        groundMaterial.color = new Color(0.78f, 0.78f, 0.78f, 1); //RGBA
+        // Debug.Log(groundMaterial.color);
+        // Change the shader of skyboxMaterial to Skybox/Procedural
+        skyboxMaterial.shader = Shader.Find("Skybox/Procedural");
+        skyboxMaterial.SetFloat("_SunSize", 0.05f); //Sun Size
+        skyboxMaterial.SetFloat("_AtmosphereThickness", 0.65f);
+        skyboxMaterial.SetFloat("_Exposure", 1.5f);
+        skyboxMaterial.SetColor("_SkyTint", new Color(0.16f, 1f, 0.88f, 1f));
+        skyboxMaterial.SetColor("_GroundColor", new Color(0.72f, 0.82f, 0.82f, 1f));
+
+        AssetDatabase.CreateAsset(groundMaterial, materialPath + "/Mat_ground_sty.mat");
+        AssetDatabase.CreateAsset(skyboxMaterial, materialPath + "/Mat_skybox.mat");
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        /* Plane */
+        // Create Environment
+        GameObject environment = new GameObject("Environment_Stylized");
+
+        // Create Ground
+        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        ground.transform.parent = environment.transform;
+        ground.name = "Ground";
+        ground.AddComponent<BoxCollider>();
+
+        ground.GetComponent<Renderer>().material = groundMaterial;
+
+        //lighting setting
+        RenderSettings.skybox = skyboxMaterial;
+        //使用Gradient作为Environment Lighting的Source
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+        //设置Sky Color
+        RenderSettings.ambientSkyColor = new Color(0.24f, 0.52f, 0.97f, 1f);
+        //设置Equator Color
+        RenderSettings.ambientEquatorColor = new Color(0.7f, 0.67f, 0.67f, 1f);
+        //设置Ground Color
+        RenderSettings.ambientGroundColor = new Color(0.367f, 0.367f, 0.354f, 1f);
+
+
+        // Create MainCamera
+        camera = GameObject.FindWithTag("MainCamera");
+        if (camera != null)
         {
-            AssetDatabase.CreateFolder(resourcesPath, "Material");
+            camera.transform.parent = environment.transform;
+
+            // if (cb_CameraController) return;
+            camera.transform.position = new Vector3(0, 4, -8);
+            camera.transform.rotation = Quaternion.Euler(10f, 0, 0);
+            // camera.transform.LookAt(ground.transform);
         }
+        else
+        {
+            camera = new GameObject("MainCamera", typeof(Camera));
+            camera.name = "MainCamera";
+            camera.tag = "MainCamera";
+            camera.transform.parent = environment.transform;
+            // if (cb_CameraController) return;
+            camera.transform.position = new Vector3(0, 4, -8);
+            camera.transform.rotation = Quaternion.Euler(10f, 0, 0);
+            // camera.transform.LookAt(ground.transform);
+        }
+
+
+
     }
 
-
-
-    /// <summary>
-    ///  CreateCheckbox - title is max left / checkbox is max right(10%)
-    /// </summary>
-    /// <param name="label"></param>
-    /// <param name="checkbox"></param>
-    void CreateCheckbox(string label, ref bool checkbox_state)
-    {
-        bool lastCheckboxState = checkbox_state;
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.currentViewWidth - EditorGUIUtility.currentViewWidth * 0.1f));
-        checkbox_state = EditorGUILayout.Toggle(checkbox_state);
-        if (checkbox_state != lastCheckboxState) //防止拖动或缩放面板导致也输出
-        {
-            Debug.Log(label + ": " + checkbox_state);
-        }
-        EditorGUILayout.EndHorizontal();
-    }
 
 
 }
