@@ -15,14 +15,20 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using System.Linq;
 using System.IO;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 
-public class QuickSceneTool : EditorWindow
+public class QScene : EditorWindow
 {
-    private static string version = "1.0.0";
+    private static string version = "1.0.1";
     // private static string autor = "Sangko.Deng";
 
+
+    Texture2D githubIcon; // 声明一个Texture2D来保存Github图标的纹理
+
+
     int selectedSceneOption = 0;
-    string[] options_demoScene = { "Scene1- basic demo secne", "Scene2- 风格化场景简单示例", "Scene2- Parkour demo scene" };
+    string[] options_demoScene = { "Scene1- Basic Cube", "Scene2- Easy Stylized", "Scene3- FX Dark Scene - A(TODO)" };
     int lastSelectedSceneOption = 0;
 
 
@@ -44,14 +50,24 @@ public class QuickSceneTool : EditorWindow
     private void OnEnable()
     {
 
+        string[] iconFiles = Directory.GetFiles(Application.dataPath, "QSceneICON_Github.png", SearchOption.AllDirectories);
+
+        if (iconFiles.Length > 0)
+        {
+            string iconPath = "Assets" + iconFiles[0].Replace(Application.dataPath, "");
+            githubIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(iconPath);
+        }
+        else
+        {
+            Debug.LogError("Failed to find Github icon!");
+        }
     }
 
+    [MenuItem("Tools/QScene_v1.0.1")]
 
-
-    [MenuItem("Tools/QuickDemoScene")]
     static void ShowWindow()
     {
-        EditorWindow win = GetWindow<QuickSceneTool>("QuickDemoScene " + "v" + version);
+        EditorWindow win = GetWindow<QScene>("QScene" + "v" + version);
         win.minSize = new Vector2(360f, 360f);
         win.maxSize = new Vector2(700f, 700f);
     }
@@ -59,7 +75,8 @@ public class QuickSceneTool : EditorWindow
     {
         //LOGO
         // GUILayout.Label("QuickScene TOOL", EditorStyles.boldLabel);
-        string logo_name = "QuickDemoScene";
+        string logo_name = "QScene";
+        string versionText = "Version <color=green>1.0.1</color> by sangko";
 
         GUIStyle logoStyle = new GUIStyle();
         logoStyle.fontSize = 36;
@@ -69,17 +86,23 @@ public class QuickSceneTool : EditorWindow
 
         GUILayout.Label(logo_name, logoStyle);
 
-        GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-        buttonStyle.normal.textColor = Color.green;
-        buttonStyle.fontSize = 36;
-        buttonStyle.normal.background = GUI.skin.button.normal.background;
-        buttonStyle.normal.textColor = GUI.skin.button.normal.textColor;
-        buttonStyle.active.background = GUI.skin.button.active.background;
-        buttonStyle.hover.background = GUI.skin.button.hover.background;
+        GUILayout.Label("", GUILayout.Height(10));
+
+        GUIStyle versionStyle = new GUIStyle();
+        versionStyle.fontSize = 12;
+        versionStyle.normal.textColor = Color.white;
+        versionStyle.alignment = TextAnchor.MiddleCenter;
+
+        GUILayout.Label(versionText, versionStyle);
+
+
+
+
+
 
         /// ////////////////////////////////////////////////////BOX1
         EditorGUILayout.BeginVertical("box");
-        EditorGUILayout.LabelField("Please select an demo scene to create");
+        EditorGUILayout.LabelField("Select an demo scene to create");
         EditorGUILayout.Space();
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("Demo Scene", GUILayout.Width(96));
@@ -100,10 +123,10 @@ public class QuickSceneTool : EditorWindow
         /// ////////////////////////////////////////////////////BOX2
         //Checkbox
         EditorGUILayout.BeginVertical("box");
-        EditorGUILayout.LabelField("Please select controller");
+        EditorGUILayout.LabelField(" Enable Controller");
 
-        CreateCheckbox("Camera Controller", ref cb_CameraController);
-        CreateCheckbox("Character Controller", ref cb_CharacterController);
+        CreateCheckbox(" Camera Controller", ref cb_CameraController);
+        CreateCheckbox(" Character Controller", ref cb_CharacterController);
 
         EditorGUILayout.EndVertical();
 
@@ -138,13 +161,36 @@ public class QuickSceneTool : EditorWindow
 
 
         /// ////////////////////////////////////////////////////Button
+        /// buttonStyle_CreateScene
+        GUIStyle buttonStyle_CreateScene = new GUIStyle(GUI.skin.button);
+        buttonStyle_CreateScene.normal.textColor = Color.green;
+        buttonStyle_CreateScene.fontSize = 36;
+        buttonStyle_CreateScene.normal.background = GUI.skin.button.normal.background;
+        buttonStyle_CreateScene.normal.textColor = GUI.skin.button.normal.textColor;
+        buttonStyle_CreateScene.active.background = GUI.skin.button.active.background;
+        buttonStyle_CreateScene.hover.background = GUI.skin.button.hover.background;
 
-        EditorGUILayout.BeginVertical("box");
+        /// buttonStyle_CleanScene
+        GUIStyle buttonStyle_CleanScene = new GUIStyle(GUI.skin.button);
+        buttonStyle_CleanScene.normal.textColor = Color.red;
+        buttonStyle_CleanScene.fontSize = 18;
+        buttonStyle_CleanScene.normal.background = GUI.skin.button.normal.background;
+        buttonStyle_CleanScene.normal.textColor = GUI.skin.button.normal.textColor;
+        buttonStyle_CleanScene.active.background = GUI.skin.button.active.background;
+        buttonStyle_CleanScene.hover.background = GUI.skin.button.hover.background;
 
-        EditorGUILayout.BeginVertical();
+
+
         GUILayout.FlexibleSpace();
 
-        if (GUILayout.Button("Create Scene", buttonStyle))
+        ///Button_CreateScene
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        bool isButton_CreateSceneClick = GUILayout.Button("Create Scene", buttonStyle_CreateScene, GUILayout.ExpandWidth(true));
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
+
+        if (isButton_CreateSceneClick)
         {
             if (selectedSceneOption == 0)
             {
@@ -156,21 +202,71 @@ public class QuickSceneTool : EditorWindow
             }
 
             EditorUtility.DisplayDialog("Create Scene", "Scene is created successfully!", "OK");
-
         }
 
-        EditorGUILayout.EndVertical();
 
-        EditorGUILayout.EndVertical();
+        ///Button_CleanScene
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        bool isButton_CleanSceneClick = GUILayout.Button("Clear Scene", buttonStyle_CleanScene, GUILayout.ExpandWidth(true));
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
+        GUILayout.FlexibleSpace();
+
+        if (isButton_CleanSceneClick)
+        {
+            if (EditorUtility.DisplayDialog("Clear Scene", "确认清空场景？", "清空"))
+            {
+                //开始显示进度条
+                EditorUtility.DisplayProgressBar("Clear Scene", "Scene is being cleaned...", 0f);
+                // 模拟进度条耗时操作
+                float progress = 0f;
+                while (progress < 1f)
+                {
+                    progress += 0.05f;
+                    EditorUtility.DisplayProgressBar("Clear Scene", "Scene is being cleaned...", progress);
+                    System.Threading.Thread.Sleep(50); // 模拟耗时操作的延迟
+                }
+
+                // 获取当前场景的路径
+                string currentScenePath = SceneManager.GetActiveScene().path;
+                // 构建一个新的空场景
+                Scene newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                // 关闭当前场景
+                // EditorSceneManager.CloseScene(SceneManager.GetActiveScene(), true);
+                // 删除当前场景文件
+                AssetDatabase.DeleteAsset(currentScenePath);
+                // 保存新场景
+                EditorSceneManager.SaveScene(newScene, currentScenePath);
+                // 打开新场景
+                EditorSceneManager.OpenScene(currentScenePath);
+
+                System.Threading.Thread.Sleep(50); // 模拟耗时操作的延迟
+
+            }
+            EditorUtility.ClearProgressBar(); // 进度条消失
+        }
 
 
+
+
+        ///Github图标
+        GUILayout.BeginVertical();
+        GUILayout.FlexibleSpace();
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        bool is_Button_TOGithubClick = GUILayout.Button(githubIcon, GUIStyle.none, GUILayout.Width(32), GUILayout.Height(48));//48：底端间隙48px
+        GUILayout.Space(16); //16: 右边间隙16px
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+        // 在GUILayout中使用按钮，并设置按钮的样式和图标
+        if (is_Button_TOGithubClick)
+        {
+            // 用户点击了Github图标，打开您的Github页面
+            Application.OpenURL("https://github.com/sangko-dgq/QuickDemoScene");
+        }
 
     }
-
-
-
-
-
 
 
     /// <summary>
@@ -178,7 +274,7 @@ public class QuickSceneTool : EditorWindow
     /// </summary>
     public static void CreateFoldersInCurrentScriptLocation()
     {
-        currentScriptPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<QuickSceneTool>())));
+        currentScriptPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<QScene>())));
         resourcesPath = currentScriptPath + "/Resources";
         materialPath = resourcesPath + "/Material";
 
