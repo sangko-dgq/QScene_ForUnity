@@ -1,12 +1,16 @@
 # QScene_ForUnity3d
 
-## version 1.0.1 beta 
+###      version 1.0.1 beta 
+
+A small plugin for Unity3D that allows for quick generation of various example scenes.     
 
 ------
 
-## A  Unity3d tool for quickly getting a demo scene.
+## 一个快速生成多样化示例场景的Unity3D插件，加速开发过程，节省时间，激发灵感。
 
-利用本工具可以快速生成一个指定风格的简单示例场景，方便用于测试、教学等场景使用，免去了重复搭建等繁琐操作。
+使用这个工具，可以快速生成特定风格的简单示例场景，非常适合用于测试、教学等场景。它省去了重复搭建等繁琐操作，方便实用。
+
+注意：目前只适用于3D场景，2D项目可能不适用会报错！
 
 ![image-20230907203237069](./doc/image-20230907203237069.png)
 
